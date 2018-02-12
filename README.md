@@ -1,8 +1,8 @@
 # php-bitcoin-signature-routines
 
-PHP routines for verifying Bitcoin signatures.  Requires PHP 5.3.2 with either GMP or BC Math.
+PHP routines for verifying Cryptocurrency signatures. Requires PHP 5.3.2 with either GMP or BC Math.
 
-At present, Bitcoin, Bitcoin Gold, and Zcash Base56 addresses are supported. Other addresses of the same format can be added through the addrInfo function fairly easily.
+At present, Bitcoin, Bitcoin Gold, and Zcash Base58 addresses are supported. Other addresses of the same format can be added through the addrInfo function fairly easily.
 
 The isMessageSignatureValid function now returns a string with results rather than throwing errors. Possible results are:
   * `Valid` The Address matches the Message and Signature.
