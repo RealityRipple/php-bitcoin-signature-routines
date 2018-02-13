@@ -25,8 +25,12 @@
 
  require_once(dirname(__FILE__).'/bigint.php');
 
- function isMessageSignatureValid($address, $signature, $message)
+ function isMessageSignatureValid($coin, $address, $signature, $message)
  {
+  $verPre = AddrTools::coinVer($coin);
+  if ($verPre === false)
+   return 'Invalid Coin';
+  $magic  = AddrTools::coinMagic($coin);
   if (USE_EXT == 'GMP')
   {
    $secp256k1   = new CurveFp('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', '0', '7');
@@ -43,16 +47,22 @@
      '32670510020758816978083085130507043184471273380659243275938904335757337482424',
      '115792089237316195423570985008687907852837564279074904382605163141518161494337');
   }
-  $address = AddrTools::base58check_decode($address);
+  $address = AddrTools::base58check_decode($address, $coin);
   if ($address === 'Checksum Mismatch')
    return 'Invalid Address Checksum';
   if ((strlen($address) < 21) || (strlen($address) > 22))
    return 'Invalid Address Length';
-  list($coin, $preLen) = AddrTools::addrInfo($address);
-  if ($coin === 'Null' || $preLen === 0)
+  $addPre   = null;
+  foreach ($verPre as $version)
+  {
+   if (substr($address, 0, strlen($version)) === $version)
+   {
+    $addPre = $version;
+    break;
+   }
+  }
+  if (is_null($addPre))
    return 'Invalid Address';
-  $magic   = "$coin Signed Message:\n";
-  $addPre  = substr($address, 0, $preLen);
   $signature = base64_decode($signature, true);
   if ($signature === false)
    return 'Invalid Signature';
@@ -81,33 +91,70 @@
  
  class AddrTools
  {
-  public static function addrInfo($rawAddr)
+  public static function coinMagic($coin)
   {
-   switch (ord($rawAddr[0]))
+   switch ($coin)
    {
-    case 0:
-    case 5:
-    case 111:
-    case 196:
-     return array('Bitcoin', 1);
+    case 'BTC':
+    case 'BCH':
+     return "Bitcoin Signed Message:\n";
      break;
-    case 23:
-    case 38:
-     return array('Bitcoin Gold', 1);
+    case 'BTG':
+     return "Bitcoin Gold Signed Message:\n";
      break;
-    case 28:
-     switch (ord($rawAddr[1]))
-     {
-      case 37:
-      case 184:
-      case 186:
-      case 189:
-       return array('Zcash', 2);
-       break;
-     }
+    case 'LTC':
+     return "Litecoin Signed Message:\n";
+     break;
+    case 'DOGE':
+     return "Dogecoin Signed Message:\n";
+     break;
+    case 'DASH':
+     return "DarkCoin Signed Message:\n";
+     break;
+    case 'DGB':
+     return "DigiByte Signed Message:\n";
+     break;
+    case 'XRP':
+     return "Ripple Signed Message:\n";
+     break;
+    case 'ZEC':
+     return "Zcash Signed Message:\n";
      break;
    }
-   return array('Null', 0);
+   return "Signed Message:\n";
+  }
+
+  public static function coinVer($coin)
+  {
+   switch ($coin)
+   {
+    case 'BTC':
+    case 'BCH':
+     return array("\x00", "\x05", "\x6F", "\xC4");
+     break;
+    case 'BTG':
+     return array("\x17", "\x26");
+     break;
+    case 'LTC':
+     return array("\x30", "\x05", "\x32, \x6F", "\xC4", "\x3A");
+     break;
+    case 'DOGE':
+     return array("\x1E", "\x16", "\x71", "\xC4");
+     break;
+    case 'DASH':
+     return array("\x4C", "\x10", "\x8C", "\x13");
+     break;
+    case 'DGB':
+     return array("\x1E", "\x05", "\x7E", "\x8C");
+     break;
+    case 'XRP':
+     return array("\x00", "\xFF");
+     break;
+    case 'ZEC':
+     return array("\x1C\x25", "\x1C\xB8", "\x1C\xBA", "\x1C\xBD");
+     break;
+   }
+   return false;
   }
 
   public static function isBignumEven($bnStr)
@@ -177,9 +224,12 @@
    return $retval;
   }
 
-  public static function base58check_decode($str)
+  public static function base58check_decode($str, $coin)
   {
-   $sV = ltrim(strtr($str, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv'), '0');
+   $dictionary = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+   if ($coin === 'XRP')
+    $dictionary = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';
+   $sV = ltrim(strtr($str, $dictionary, '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv'), '0');
    if (USE_EXT == 'GMP')
     $v = gmp_init($sV, 58);
    else
@@ -187,7 +237,7 @@
    $v = BigInt::big2bin($v);
    for ($i = 0; $i < strlen($str); $i++)
    {
-    if ($str[$i] != '1')
+    if ($str[$i] != $dictionary[0])
      break;
     $v = "\x00" . $v;
    }
