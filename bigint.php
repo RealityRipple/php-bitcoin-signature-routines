@@ -80,20 +80,36 @@
     $v = gmp_init('0');
    else
     $v = '0';
+   $neg = false;
+   if (substr($binStr, 0, 4) == chr(0x80).chr(0).chr(0).chr(0))
+   {
+    $neg = true;
+    $binStr = substr($binStr, 4);
+   }
    for ($i = 0; $i < strlen($binStr); $i++)
    {
     $v = self::add(self::mul($v, 256), ord($binStr[$i]));
    }
+   if ($neg)
+    $v = self::neg($v);
    return $v;
   }
   public static function big2bin($v)
   {
    $binStr = '';
+   $neg = false;
+   if (self::cmp($v, 0) < 0)
+   {
+    $neg = true;
+    $v = self::neg($v);
+   }
    while (self::cmp($v, 0) > 0)
    {
     list($v, $r) = self::div_qr($v, 256);
     $binStr = chr(self::bigintval($r)) . $binStr;
    }
+   if ($neg)
+    $binStr = chr(0x80).str_repeat(chr(0), 3).$binStr;
    return $binStr;
   }
  }
