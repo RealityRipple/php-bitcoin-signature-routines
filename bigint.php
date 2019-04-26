@@ -64,7 +64,7 @@
   {
    if (USE_EXT == 'GMP')
     return gmp_div_qr($left, $right);
-   $q = BigInt::bc_floor(bcdiv($left, $right, 4));
+   $q = self::bc_floor(bcdiv($left, $right, 4));
    $r = bcsub($left, bcmul($q, $right));
    return array($q, $r);
   }
@@ -82,17 +82,17 @@
     $v = '0';
    for ($i = 0; $i < strlen($binStr); $i++)
    {
-    $v = BigInt::add(BigInt::mul($v, 256), ord($binStr[$i]));
+    $v = self::add(self::mul($v, 256), ord($binStr[$i]));
    }
    return $v;
   }
   public static function big2bin($v)
   {
    $binStr = '';
-   while (BigInt::cmp($v, 0) > 0)
+   while (self::cmp($v, 0) > 0)
    {
-    list($v, $r) = BigInt::div_qr($v, 256);
-    $binStr = chr(BigInt::bigintval($r)) . $binStr;
+    list($v, $r) = self::div_qr($v, 256);
+    $binStr = chr(self::bigintval($r)) . $binStr;
    }
    return $binStr;
   }
