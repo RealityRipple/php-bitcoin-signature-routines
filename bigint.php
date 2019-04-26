@@ -63,7 +63,10 @@
   public static function div_qr($left, $right)
   {
    if (USE_EXT == 'GMP')
-    return gmp_div_qr($left, $right);
+   {
+    list($n, $d) = gmp_div_qr($left, $right);
+    return array($n, gmp_intval($d));
+   }
    $q = self::bc_floor(bcdiv($left, $right, 4));
    $r = bcsub($left, bcmul($q, $right));
    return array($q, $r);
