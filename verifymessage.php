@@ -159,6 +159,8 @@
 
   public static function isBignumEven($bnStr)
   {
+   if (USE_EXT == 'GMP')
+    return (gmp_testbit($bnStr, 0) === false);
    return (((int)$bnStr[strlen($bnStr)-1]) & 1) == 0;
   }
 
